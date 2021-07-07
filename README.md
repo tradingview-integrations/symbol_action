@@ -1,1 +1,1 @@
-# _symbol_action
+# symbol_action
