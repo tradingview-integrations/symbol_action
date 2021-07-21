@@ -1,5 +1,5 @@
 #!/bin/bash
-env
+
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE' | grep -w "$CMD")" ]] ; then
     echo "ERROR: Wrong command received: '$CMD'"
