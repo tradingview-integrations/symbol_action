@@ -6,6 +6,12 @@ if [[ -z "$(echo 'UPLOAD VALIDATE' | grep -w "$CMD")" ]] ; then
     exit 1
 fi
 
+echo ${GITHUB_TOKEN} | gh auth login --with-token
+if [ -z $? ] ; then
+    echo "Authorizaton error, update ORG_TOKEN in repo secrets"
+    exit 1
+fi
+
 if [ ${CMD} == 'UPLOAD' ] ; then
     echo uploading symbol info
     ENVIRONMENT=${GITHUB_REF##*/}
