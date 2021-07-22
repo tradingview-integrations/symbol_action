@@ -9,4 +9,6 @@ To avoid such inconvenience by git hooks. Just make the following `pre-push` hoo
     echo 'git tag -d $(git tag)' >> .git/hooks/pre-push
     chmod a+x .git/hooks/pre-push
 
-This hook will remove tag before push and it will allow to push without `-f` option.
+This hook will remove tag `v0.1` in local repository before push and this allows to push without `-f` option.
+
+The latest tag state can be retrieved (in a several seconds after push) by `git fetch`.
