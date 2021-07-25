@@ -86,7 +86,11 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     fi
 
     # save new versions
-    for F in $MODIFIED; do cp "$F" "$F.new"; done
+    for F in $MODIFIED; do
+        # custom modification for kucoin here
+        # convert all 'symbol' values to upper case
+        cat "$F" | jq '. + {symbol:.symbol|map(ascii_upcase)}' > "$F.new"
+    done
 
     # save old versions
     git checkout -b old origin/$ENVIRONMENT
