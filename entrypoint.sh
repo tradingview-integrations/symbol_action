@@ -84,21 +84,25 @@ if [ ${CMD} == 'VALIDATE' ] ; then
         gh pr review $PR_NUMBER -r -b "No symbol info files (JSON) were modified"
         exit 1
     fi
+    
+    # download inspect tool
+    aws s3 cp "$S3_BUCKET_INSPECT/inspect-df-757" ./inspect --no-progress && chmod +x ./inspect
+    echo inpsect info: $(./inspect version)
 
     # save new versions
     for F in $MODIFIED; do
-        # custom modification for kucoin here
+        # !!! custom processing for Kucoin here
         # convert all 'symbol' values to upper case
-        cat "$F" | jq '. + {symbol:.symbol|map(ascii_upcase)}' > "$F.new"
+        cat "$F" | jq '. + {symbol:.symbol|map(ascii_upcase)}' > "$F"
+        # commit and push changed files
+        git commit -am "fix lowercase symbol names"
+        git push origin HEAD
+        cp "$F" "$F.new"
     done
 
     # save old versions
     git checkout -b old origin/$ENVIRONMENT
     for F in $MODIFIED; do cp "$F" "$F.old"; done
-
-    # download inspect tool
-    aws s3 cp "$S3_BUCKET_INSPECT/inspect-df-757" ./inspect --no-progress && chmod +x ./inspect
-    echo inpsect info: $(./inspect version)
 
     # check files
     FAILED=false
