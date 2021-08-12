@@ -95,7 +95,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     for F in $MODIFIED; do cp "$F" "$F.old"; done
 
     # download inspect tool
-    aws s3 cp "$S3_BUCKET_INSPECT/inspect-df-757" ./inspect --no-progress && chmod +x ./inspect
+    aws s3 cp "$S3_BUCKET_INSPECT/inspect_r4.12" ./inspect --no-progress && chmod +x ./inspect
     echo inpsect info: $(./inspect version)
 
     # check files
