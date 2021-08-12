@@ -19,6 +19,7 @@ if [ ${CMD} == 'UPLOAD' ] ; then
         echo "ERROR: Wrong environment: '$ENVIRONMENT'. It must be 'production' or 'staging'"
         exit 1
     fi
+    git fetch origin --depth=1 > /dev/null 2>&1
     INTEGRATION_NAME=${GITHUB_REPOSITORY##*/}
     for F in $(ls symbols);
     do
