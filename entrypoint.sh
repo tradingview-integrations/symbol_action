@@ -52,7 +52,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
         echo "#### These files were deleted:" >> deleted_report
         echo "$DELETED" >> deleted_report
         DELETED_REPORT=$(cat deleted_report)
-        gh pr review $PR_NUMBER -r -b "$DELETED_REPORT"
+        gh pr review $PR_NUMBER -c -b "$DELETED_REPORT"
         exit 1
     fi
 
@@ -63,7 +63,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
         echo "#### These files were renamed:" >> renamed_report
         echo "$RENAMED" >> renamed_report
         RENAMED_REPORT=$(cat renamed_report)
-        gh pr review $PR_NUMBER -r -b "$RENAMED_REPORT"
+        gh pr review $PR_NUMBER -c -b "$RENAMED_REPORT"
         exit 1
     fi
 
@@ -74,7 +74,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
         echo "#### These files were added:" >> added_report
         echo "$ADDED" >> added_report
         ADDED_REPORT=$(cat added_report)
-        gh pr review $PR_NUMBER -r -b "$ADDED_REPORT"
+        gh pr review $PR_NUMBER -c -b "$ADDED_REPORT"
         exit 1
     fi
 
@@ -82,7 +82,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     MODIFIED=$(git diff --name-only origin/$ENVIRONMENT | grep ".json$")
     if [ -z "$MODIFIED" ]; then
         echo No symbol info files were modified
-        gh pr review $PR_NUMBER -r -b "No symbol info files (JSON) were modified"
+        gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified"
+        gh pr close $PR_NUMBER --delete-branch
         exit 1
     fi
 
@@ -94,7 +95,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     for F in $MODIFIED; do cp "$F" "$F.old"; done
 
     # download inspect tool
-    aws s3 cp "$S3_BUCKET_INSPECT/inspect_r4.11" ./inspect --no-progress && chmod +x ./inspect
+    aws s3 cp "$S3_BUCKET_INSPECT/inspect-df-757" ./inspect --no-progress && chmod +x ./inspect
     echo inpsect info: $(./inspect version)
 
     # check files
