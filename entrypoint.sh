@@ -29,10 +29,12 @@ if [ ${CMD} == 'UPLOAD' ] ; then
         if [ $ENVIRONMENT = "production" ]; then
             echo uploading $F to $S3_BUCKET_SYMBOLS/staging/$FINAL_NAME
             aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/staging/$FINAL_NAME" --no-progress
-            echo reseting git staging to production
-            git fetch && git checkout staging && git reset origin/production --hard && git push -f origin HEAD
         fi
     done
+    if [ $ENVIRONMENT = "production" ]; then
+        echo reseting staging symbols to production version
+        git checkout staging && git fetch && git checkout origin/production 'symbols*' && git commit -m "sync with production" && git push origin HEAD
+    fi
 fi
 
 if [ ${CMD} == 'VALIDATE' ] ; then
