@@ -89,7 +89,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
         echo No symbol info files were modified
         gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified"
         gh pr close $PR_NUMBER --delete-branch
-        exit 1
+        exit 0
     fi
 
     # save new versions
@@ -124,7 +124,6 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     echo ready to merge
 
     # merge PR
-    # GITHUB_TOKEN=$AUTOMATION_TOKEN
     gh pr merge $PR_NUMBER --merge --delete-branch
 
 fi
