@@ -12,8 +12,8 @@ if [ -z $? ] ; then
     exit 1
 fi
 
-git config --global user.name "updater-bot"
-git config --global user.email "updater-bot@tradingview.com"
+git config user.name "updater-bot"
+git config user.email "updater-bot@tradingview.com"
 
 if [ ${CMD} == 'UPLOAD' ] ; then
     echo uploading symbol info
