@@ -13,7 +13,7 @@ if [ -z $? ] ; then
 fi
 
 git config user.name "updater-bot"
-git config user.email "updater-bot@tradingview.com"
+git config user.email "updater-bot@fastmail.us"
 
 if [ ${CMD} == 'UPLOAD' ] ; then
     echo uploading symbol info
