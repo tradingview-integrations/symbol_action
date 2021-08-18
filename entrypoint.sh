@@ -126,4 +126,5 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     # merge PR
     gh pr merge $PR_NUMBER --merge --delete-branch
 
+    exit 0 # pr merge can fail in case of data conflicts, but it is not fail of verification
 fi
