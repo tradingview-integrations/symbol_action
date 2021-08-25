@@ -1,7 +1,10 @@
 #!/bin/bash
 
+GITHUB_USER="updater-bot"
+GITHUB_USER_EMAIL="updater-bot@fastmail.us"
+
 # check command 
-if [[ -z "$(echo 'UPLOAD VALIDATE' | grep -w "$CMD")" ]] ; then
+if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
     echo "ERROR: Wrong command received: '$CMD'"
     exit 1
 fi
@@ -12,8 +15,8 @@ if [ -z $? ] ; then
     exit 1
 fi
 
-git config user.name "updater-bot"
-git config user.email "updater-bot@fastmail.us"
+git config user.name $GITHUB_USER
+git config user.email $GITHUB_USER_EMAIL
 
 if [ ${CMD} == 'UPLOAD' ] ; then
     echo uploading symbol info
@@ -88,6 +91,7 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     if [ -z "$MODIFIED" ]; then
         echo No symbol info files were modified
         gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified"
+        git checkout $GITHUB_HEAD_REF
         gh pr close $PR_NUMBER --delete-branch
         exit 0
     fi
@@ -127,4 +131,92 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     gh pr merge $PR_NUMBER --merge --delete-branch
 
     exit 0 # pr merge can fail in case of data conflicts, but it is not fail of verification
+fi
+
+if [ ${CMD} == 'CHECK' ] ; then
+    echo "check for update of symbol info"
+
+    git fetch origin --depth=1 > /dev/null 2>&1
+
+    PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open --author="${GITHUB_USER}" | wc -l)
+
+    if (( PR_PENDING > 0 )); then
+        echo "There is/are ${PR_PENDING} pending pull request(s). Can not create new PR."
+        exit 1
+    fi
+
+    BRANCH=${ENVIRONMENT}-${CONTAINER}-$(date +"%Y-%m-%d-%H-%M-%S")
+
+    git checkout "${ENVIRONMENT}"
+    git checkout -b "${BRANCH}"
+
+    rm -v symbols/*.json
+
+    # download inspect tool
+    aws s3 cp "$S3_BUCKET_INSPECT/inspect_r4.12" ./inspect --no-progress && chmod +x ./inspect
+    echo inpsect info: $(./inspect version)
+
+    RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
+    AUTHORIZATION="Authorization: Bearer ${TOKEN}"
+    PREPROCESS=$(cat ./config/preprocess)
+    IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
+    for GROUP in "${GROUP_NAMES[@]}"
+    do
+        echo "requesting symbol info for ${GROUP}"
+        FILE=${GROUP}.json
+        # shellcheck disable=SC2086
+        curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
+
+        CURL_RES=$?
+        
+        if [ "$CURL_RES" != "0" ]
+        then
+            echo "error getting symbol info for ${GROUP}"
+            exit 1
+        fi
+
+        SYMBOLS_STATUS=$(jq .s "symbols/${FILE}")
+        if [ "$SYMBOLS_STATUS" != '"ok"' ] 
+        then
+            ERROR_MESSAGE=$(jq .errmsg "symbols/${FILE}")
+            echo "got not \"ok\" symbols status for ${GROUP}: s: \"$SYMBOLS_STATUS\", errmsg: \"$ERROR_MESSAGE\""
+            exit 1
+        fi
+        
+        if [ "${PREPROCESS}" != "" ] 
+        then
+            jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+        fi
+
+        # if symbol info is valid, the file will be replaced by normalized version
+        # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
+        ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}";
+
+        # remove .s from file in case when inspect didn't normalizate the file
+        jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+
+    done
+
+    MODIFIED=$(git diff --name-only "origin/${ENVIRONMENT}" | grep ".json$")
+
+    if [ -z "${MODIFIED}" ]
+    then
+        echo "there are no changes"
+        exit 0
+    fi
+
+    git commit -am "automatic symbol info update" && \
+    git push origin HEAD && \
+    gh pr create --title "Automatic symbol info update" \
+    --base "${ENVIRONMENT}" \
+    --body "This is an automated update from the updater-bot" \
+    --head "${BRANCH}"
+
+    PUSH_RES=$?
+
+    if [ "${PUSH_RES}" != "0" ]
+    then
+        echo "error on commiting and pushing changes, code ${PUSH_RES}"
+        exit 1
+    fi
 fi
