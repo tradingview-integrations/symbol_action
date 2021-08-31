@@ -3,6 +3,7 @@
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
 
+env
 
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
@@ -227,6 +228,7 @@ if [ ${CMD} == 'CHECK' ] ; then
         if [ "${PREPROCESS}" != "" ] 
         then
             jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+            echo "file ${FILE} preprocessed"
         fi
 
         # if symbol info is valid, the file will be replaced by normalized version
