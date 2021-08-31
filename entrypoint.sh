@@ -156,7 +156,7 @@ if [ ${CMD} == 'CHECK' ] ; then
 
     function write_metrics {
         {
-            echo "ID=${ID}"
+            echo "ID=${EVENT_ID}"
             echo "symbols.updater.run=${symbols_updater_run}"
             echo "symbols.updater.error=${symbols_updater_error}"
             echo "symbols.updater.pending=${symbols_updater_pending}"
