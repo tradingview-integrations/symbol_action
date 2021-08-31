@@ -185,7 +185,7 @@ if [ ${CMD} == 'CHECK' ] ; then
         exit 1
     fi
 
-    BRANCH=${ENVIRONMENT}-${CONTAINER}-$(date +"%Y-%m-%d-%H-%M-%S")
+    BRANCH="${EVENT_ID}"
 
     git checkout "${ENVIRONMENT}"
     git checkout -b "${BRANCH}"
