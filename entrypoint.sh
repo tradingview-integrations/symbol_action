@@ -3,8 +3,6 @@
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
 
-env
-
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
     echo "ERROR: Wrong command received: '$CMD'"
