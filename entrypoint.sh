@@ -143,14 +143,10 @@ if [ ${CMD} == 'CHECK' ] ; then
     }
 
     function load_metrics {
-        if [ -f "${METRICS_FILE}" ]; then
-            eval "$(sed 's/\./_/g' ${METRICS_FILE})"
-        else
             symbols_updater_run=0
             symbols_updater_error=0
             symbols_updater_pending=0
             symbols_updater_success=0
-        fi
     }
 
     function write_metrics {
