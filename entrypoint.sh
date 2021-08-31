@@ -3,6 +3,7 @@
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
 
+
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
     echo "ERROR: Wrong command received: '$CMD'"
@@ -136,12 +137,50 @@ fi
 if [ ${CMD} == 'CHECK' ] ; then
     echo "check for update of symbol info"
 
+    METRICS_FILE="metrics.mx"
+    
+    function inc {
+        (($1++))
+    }
+
+    function load_metrics {
+        if [ -f "${METRICS_FILE}" ]; then
+            eval "$(sed 's/\./_/g' ${METRICS_FILE})"
+        else
+            symbols_updater_run=0
+            symbols_updater_error=0
+            symbols_updater_pending=0
+            symbols_updater_success=0
+        fi
+    }
+
+    function write_metrics {
+        {
+            echo "ID=${ID}"
+            echo "symbols.updater.run=${symbols_updater_run}"
+            echo "symbols.updater.error=${symbols_updater_error}"
+            echo "symbols.updater.pending=${symbols_updater_pending}"
+            echo "symbols.updater.success=${symbols_updater_success}"
+        } > ${METRICS_FILE}
+    }
+
+    function cleanup {
+        write_metrics
+    }
+
+    trap cleanup EXIT
+
+    load_metrics
+
+    inc symbols_updater_run
+
     git fetch origin --depth=1 > /dev/null 2>&1
 
     PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open --author="${GITHUB_USER}" | wc -l)
 
     if (( PR_PENDING > 0 )); then
         echo "There is/are ${PR_PENDING} pending pull request(s). Can not create new PR."
+        inc symbols_updater_pending
         exit 1
     fi
 
@@ -172,6 +211,7 @@ if [ ${CMD} == 'CHECK' ] ; then
         if [ "$CURL_RES" != "0" ]
         then
             echo "error getting symbol info for ${GROUP}"
+            inc symbols_updater_error
             exit 1
         fi
 
@@ -180,6 +220,7 @@ if [ ${CMD} == 'CHECK' ] ; then
         then
             ERROR_MESSAGE=$(jq .errmsg "symbols/${FILE}")
             echo "got not \"ok\" symbols status for ${GROUP}: s: \"$SYMBOLS_STATUS\", errmsg: \"$ERROR_MESSAGE\""
+            inc symbols_updater_error
             exit 1
         fi
         
@@ -202,6 +243,7 @@ if [ ${CMD} == 'CHECK' ] ; then
     if [ -z "${MODIFIED}" ]
     then
         echo "there are no changes"
+        inc symbols_updater_success
         exit 0
     fi
 
@@ -217,6 +259,9 @@ if [ ${CMD} == 'CHECK' ] ; then
     if [ "${PUSH_RES}" != "0" ]
     then
         echo "error on commiting and pushing changes, code ${PUSH_RES}"
+        inc symbols_updater_error
         exit 1
     fi
+
+    inc symbols_updater_success
 fi
