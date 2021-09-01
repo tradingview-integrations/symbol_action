@@ -6,7 +6,7 @@ runs:
   steps:
     - name: do
       run: ${{ github.action_path }}/entrypoint.sh
-        shell: bash
+      shell: bash
     - name: upload artifact
       if: ${{ env.CMD == CHECK }}
       uses: actions/upload-artifact@v2
