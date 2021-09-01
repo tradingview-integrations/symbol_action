@@ -8,8 +8,7 @@ runs:
       run: ${{ github.action_path }}/entrypoint.sh
       shell: bash
     - name: upload artifact
-      if: ${{ env.CMD == CHECK }}
       uses: actions/upload-artifact@v2
-        with:
-          name: metrics
-          path: metrics.mx
+      with:
+        name: metrics
+        path: metrics.mx
