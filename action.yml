@@ -4,10 +4,12 @@ description: 'Symbols check and upload action'
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/entrypoint.sh
-      shell: bash
-    - uses: actions/upload-artifact@v2
+    - name: do
+      run: ${{ github.action_path }}/entrypoint.sh
+        shell: bash
+    - name: upload artifact
       if: ${{ env.CMD == CHECK }}
-      with:
-        name: metrics
-        path: metrics.mx
+      uses: actions/upload-artifact@v2
+        with:
+          name: metrics
+          path: metrics.mx
