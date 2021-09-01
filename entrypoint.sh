@@ -169,6 +169,7 @@ if [ ${CMD} == 'CHECK' ] ; then
 
     inc symbols_updater_run
 
+    git checkout "${ENVIRONMENT}"
     git fetch origin --depth=1 > /dev/null 2>&1
 
     PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open --author="${GITHUB_USER}" | wc -l)
@@ -180,8 +181,6 @@ if [ ${CMD} == 'CHECK' ] ; then
     fi
 
     BRANCH="${EVENT_ID}"
-
-    git checkout "${ENVIRONMENT}"
     git checkout -b "${BRANCH}"
 
     rm -v symbols/*.json
