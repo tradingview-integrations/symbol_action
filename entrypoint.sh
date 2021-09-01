@@ -49,7 +49,11 @@ function cleanup {
     [[ -d “$HOME” ]] && cd “$HOME” && rm -rf *
     # Cleaning up event.json
     [[ -f “$GITHUB_EVENT_PATH” ]] && rm $GITHUB_EVENT_PATH
-    write_metrics
+    # write metrics only for CHECK action
+    if [ ${CMD} == 'CHECK' ]
+    then 
+        write_metrics
+    fi
 }
 
 trap cleanup EXIT
