@@ -191,7 +191,7 @@ if [ ${CMD} == 'CHECK' ] ; then
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
     AUTHORIZATION="Authorization: Bearer ${TOKEN}"
-    PREPROCESS=$(cat ./config/preprocess)
+    PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
     do
