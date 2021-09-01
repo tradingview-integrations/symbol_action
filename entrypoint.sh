@@ -198,12 +198,8 @@ if [ ${CMD} == 'CHECK' ] ; then
     do
         echo "requesting symbol info for ${GROUP}"
         FILE=${GROUP}.json
-        # shellcheck disable=SC2086
-        curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
-
-        CURL_RES=$?
         
-        if [ "$CURL_RES" != "0" ]
+        if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
         then
             echo "error getting symbol info for ${GROUP}"
             inc symbols_updater_error
@@ -260,4 +256,5 @@ if [ ${CMD} == 'CHECK' ] ; then
     fi
 
     inc symbols_updater_success
+    exit 0
 fi
