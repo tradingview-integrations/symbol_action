@@ -2,15 +2,18 @@
 
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
+METRICS_FILE="metrics.mx"
 
 # check command 
-if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
+if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
+then
     echo "ERROR: Wrong command received: '$CMD'"
     exit 1
 fi
 
 echo ${GITHUB_TOKEN} | gh auth login --with-token > /dev/null 2>&1
-if [ -z $? ] ; then
+if [ -z $? ]
+then
     echo "Authorizaton error, update AUTOMATION_TOKEN in repo secrets"
     exit 1
 fi
@@ -18,35 +21,77 @@ fi
 git config user.name $GITHUB_USER
 git config user.email $GITHUB_USER_EMAIL
 
-if [ ${CMD} == 'UPLOAD' ] ; then
+function inc {
+    (($1++))
+}
+
+function load_metrics {
+        symbols_updater_run=0
+        symbols_updater_error=0
+        symbols_updater_pending=0
+        symbols_updater_success=0
+}
+
+function write_metrics {
+    {
+        echo "ID=${EVENT_ID}"
+        echo "symbols.updater.run=${symbols_updater_run}"
+        echo "symbols.updater.error=${symbols_updater_error}"
+        echo "symbols.updater.pending=${symbols_updater_pending}"
+        echo "symbols.updater.success=${symbols_updater_success}"
+    } > ${METRICS_FILE}
+}
+
+function cleanup {
+    # Cleaning up Workspace directory
+    rm -rf *
+    # Cleaning up home directory
+    [[ -d “$HOME” ]] && cd “$HOME” && rm -rf *
+    # Cleaning up event.json
+    [[ -f “$GITHUB_EVENT_PATH” ]] && rm $GITHUB_EVENT_PATH
+    write_metrics
+}
+
+trap cleanup EXIT
+
+load_metrics
+
+if [ ${CMD} == 'UPLOAD' ]
+then
     echo uploading symbol info
     ENVIRONMENT=${GITHUB_REF##*/}
-    if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]] ; then
+    if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
+    then
         echo "ERROR: Wrong environment: '$ENVIRONMENT'. It must be 'production' or 'staging'"
         exit 1
     fi
     git fetch origin --depth=1 > /dev/null 2>&1
     INTEGRATION_NAME=${GITHUB_REPOSITORY##*/}
-    for F in $(ls symbols);
+    for F in $(ls symbols)
     do
         FINAL_NAME=${INTEGRATION_NAME}/$(basename "$F")
         echo uploading symbols/$F to $S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME
         aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME" --no-progress
-        if [ $ENVIRONMENT = "production" ]; then
+        if [ $ENVIRONMENT = "production" ]
+        then
             echo uploading $F to $S3_BUCKET_SYMBOLS/staging/$FINAL_NAME
             aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/staging/$FINAL_NAME" --no-progress
         fi
     done
-    if [ $ENVIRONMENT = "production" ]; then
+    if [ $ENVIRONMENT = "production" ]
+    then
         echo reseting staging symbols to production version
         git checkout staging && git fetch && git checkout origin/production 'symbols*' && git commit -m "sync with production" && git push origin HEAD
     fi
+    exit 0
 fi
 
-if [ ${CMD} == 'VALIDATE' ] ; then
+if [ ${CMD} == 'VALIDATE' ]
+then
     echo validete symbol info
     ENVIRONMENT=${GITHUB_BASE_REF}
-    if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]] ; then
+    if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
+    then
         echo "ERROR: Wrong environment: '$ENVIRONMENT'. It must be 'production' or 'staging'"
         exit 1
     fi
@@ -55,7 +100,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
 
     # check for deleted JSON files
     DELETED=$(git diff --name-only --diff-filter=D origin/$ENVIRONMENT)
-    if [ -n "$DELETED" ]; then
+    if [ -n "$DELETED" ]
+    then
         echo "### :red_circle: Deleting JSON files is forbidden" > deleted_report
         echo "#### These files were deleted:" >> deleted_report
         echo "$DELETED" >> deleted_report
@@ -66,7 +112,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
 
     # check for renamed JSON files
     RENAMED=$(git diff --name-only --diff-filter=R origin/$ENVIRONMENT)
-    if [ -n "$RENAMED" ]; then
+    if [ -n "$RENAMED" ]
+    then
         echo "### :red_circle: Renaming JSON files is forbidden" > renamed_report
         echo "#### These files were renamed:" >> renamed_report
         echo "$RENAMED" >> renamed_report
@@ -77,7 +124,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
 
     # check for added JSON files
     ADDED=$(git diff --name-only --diff-filter=A origin/$ENVIRONMENT)
-    if [ -n "$ADDED" ]; then
+    if [ -n "$ADDED" ]
+    then
         echo "### :red_circle: Adding JSON files is forbidden" > added_report
         echo "#### These files were added:" >> added_report
         echo "$ADDED" >> added_report
@@ -88,7 +136,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
 
     # validate modified files
     MODIFIED=$(git diff --name-only origin/$ENVIRONMENT | grep ".json$")
-    if [ -z "$MODIFIED" ]; then
+    if [ -z "$MODIFIED" ]
+    then
         echo No symbol info files were modified
         gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified"
         git checkout $GITHUB_HEAD_REF
@@ -110,7 +159,8 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     # check files
     FAILED=false
 
-    for F in $MODIFIED; do
+    for F in $MODIFIED
+    do
         echo Checking "$F"
         ./inspect symfile --old="$F.old" --new="$F.new" --log-file=stdout --report-file=report.txt --report-format=github
         ./inspect symfile diff --old="$F.old" --new="$F.new" --log-file=stdout
@@ -133,39 +183,15 @@ if [ ${CMD} == 'VALIDATE' ] ; then
     exit 0 # pr merge can fail in case of data conflicts, but it is not fail of verification
 fi
 
-if [ ${CMD} == 'CHECK' ] ; then
+if [ ${CMD} == 'CHECK' ]
+then
     echo "check for update of symbol info"
 
-    METRICS_FILE="metrics.mx"
-    
-    function inc {
-        (($1++))
-    }
-
-    function load_metrics {
-            symbols_updater_run=0
-            symbols_updater_error=0
-            symbols_updater_pending=0
-            symbols_updater_success=0
-    }
-
-    function write_metrics {
-        {
-            echo "ID=${EVENT_ID}"
-            echo "symbols.updater.run=${symbols_updater_run}"
-            echo "symbols.updater.error=${symbols_updater_error}"
-            echo "symbols.updater.pending=${symbols_updater_pending}"
-            echo "symbols.updater.success=${symbols_updater_success}"
-        } > ${METRICS_FILE}
-    }
-
-    function cleanup {
-        write_metrics
-    }
-
-    trap cleanup EXIT
-
-    load_metrics
+    if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
+    then
+        echo "ERROR: Wrong environment: '$ENVIRONMENT'. It must be 'production' or 'staging'"
+        exit 1
+    fi
 
     inc symbols_updater_run
 
@@ -174,7 +200,8 @@ if [ ${CMD} == 'CHECK' ] ; then
 
     PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open --author="${GITHUB_USER}" | wc -l)
 
-    if (( PR_PENDING > 0 )); then
+    if (( PR_PENDING > 0 ))
+    then
         echo "There is/are ${PR_PENDING} pending pull request(s). Can not create new PR."
         inc symbols_updater_pending
         exit 1
