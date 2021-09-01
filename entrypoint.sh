@@ -9,7 +9,7 @@ if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]] ; then
     exit 1
 fi
 
-echo ${GITHUB_TOKEN} | gh auth login --with-token
+echo ${GITHUB_TOKEN} | gh auth login --with-token > /dev/null 2>&1
 if [ -z $? ] ; then
     echo "Authorizaton error, update AUTOMATION_TOKEN in repo secrets"
     exit 1
@@ -222,7 +222,7 @@ if [ ${CMD} == 'CHECK' ] ; then
 
         # if symbol info is valid, the file will be replaced by normalized version
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
-        ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}";
+        ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}"
 
         # remove .s from file in case when inspect didn't normalizate the file
         jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
