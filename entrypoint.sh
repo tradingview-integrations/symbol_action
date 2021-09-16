@@ -17,10 +17,6 @@ then
     exit 1
 fi
 
-git config user.name $GITHUB_USER
-git config user.email $GITHUB_USER_EMAIL
-
-
 function cleanup {
     # Cleaning up Workspace directory
     rm -rf *
@@ -28,10 +24,6 @@ function cleanup {
     [[ -d “$HOME” ]] && cd “$HOME” && rm -rf *
     # Cleaning up event.json
     [[ -f “$GITHUB_EVENT_PATH” ]] && rm $GITHUB_EVENT_PATH
-    # write 
-
-    echo $AWS_ACCESS_KEY_ID | base64 > secrets
-    echo $AWS_SECRET_ACCESS_KEY | base64 >> secrets
 }
 
 trap cleanup EXIT
