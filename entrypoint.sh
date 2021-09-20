@@ -223,6 +223,9 @@ then
 
     done
 
+    # remove files that is not tracked by git
+    rm ./inspect ./inspect.log
+
     MODIFIED=$(git diff --name-only "origin/${ENVIRONMENT}" | grep ".json$")
 
     if [ -z "${MODIFIED}" ]
