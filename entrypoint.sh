@@ -28,8 +28,6 @@ function cleanup {
 
 trap cleanup EXIT
 
-load_metrics
-
 if [ ${CMD} == 'UPLOAD' ]
 then
     echo uploading symbol info
@@ -189,7 +187,7 @@ then
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
     AUTHORIZATION="Authorization: Bearer ${TOKEN}"
-    PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
+    PREPROCESS=$(cat ./config/preprocess 2> /dev/null)
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
     do
