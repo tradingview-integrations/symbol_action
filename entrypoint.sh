@@ -230,6 +230,8 @@ then
         echo "there are no changes"
         exit 0
     fi
+    
+    git clean -qfx
 
     git commit -am "automatic symbol info update" && \
     git push origin HEAD && \
