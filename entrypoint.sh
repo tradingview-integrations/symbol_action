@@ -17,6 +17,9 @@ then
     exit 1
 fi
 
+git config user.name $GITHUB_USER
+git config user.email $GITHUB_USER_EMAIL
+
 function cleanup {
     # Cleaning up Workspace directory
     rm -rf *
@@ -168,7 +171,7 @@ then
     git checkout "${ENVIRONMENT}"
     git fetch origin --depth=1 > /dev/null 2>&1
 
-    PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open | wc -l)
+    PR_PENDING=$(gh pr list --base="${ENVIRONMENT}" --state=open --author="${GITHUB_USER}" | wc -l)
 
     if (( PR_PENDING > 0 ))
     then
@@ -187,7 +190,7 @@ then
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
     AUTHORIZATION="Authorization: Bearer ${TOKEN}"
-    PREPROCESS=$(cat ./config/preprocess 2> /dev/null)
+    PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
     do
@@ -223,9 +226,6 @@ then
 
     done
 
-    # remove files that is not tracked by git
-    rm ./inspect ./inspect.log
-
     MODIFIED=$(git diff --name-only "origin/${ENVIRONMENT}" | grep ".json$")
 
     if [ -z "${MODIFIED}" ]
@@ -233,7 +233,7 @@ then
         echo "there are no changes"
         exit 0
     fi
-    
+
     git commit -am "automatic symbol info update" && \
     git push origin HEAD && \
     gh pr create --title "Automatic symbol info update" \
