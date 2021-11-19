@@ -198,6 +198,7 @@ then
 
         #### DEBUG ###
         echo "request: ${REST_URL}/symbol_info?group=${GROUP}"
+        echo "header: ${AUTHORIZATION}"
         #### DEBUG ###
 
         FILE=${GROUP}.json
@@ -211,6 +212,7 @@ then
         #### DEBUG ###
         echo "Received file:"
         cat "symbols/${FILE}"
+        echo ""
         #### DEBUG ###
         
         SYMBOLS_STATUS=$(jq .s "symbols/${FILE}")
