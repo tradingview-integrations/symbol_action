@@ -189,7 +189,10 @@ then
     echo inpsect info: $(./inspect version)
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
-    AUTHORIZATION="Authorization: Bearer ${TOKEN}"
+    if [ "${TOKEN}" != "" ]
+    then 
+        AUTHORIZATION="Authorization: Bearer ${TOKEN}"
+    fi
     PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
