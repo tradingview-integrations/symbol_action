@@ -13,7 +13,7 @@ fi
 echo ${GITHUB_TOKEN} | gh auth login --with-token > /dev/null 2>&1
 if [ -z $? ]
 then
-    echo "Authorizaton error, update AUTOMATION_TOKEN in repo secrets"
+    echo "Authorizaton error, update GITHUB_TOKEN"
     exit 1
 fi
 
@@ -24,9 +24,9 @@ function cleanup {
     # Cleaning up Workspace directory
     rm -rf *
     # Cleaning up home directory
-    [[ -d “$HOME” ]] && cd “$HOME” && rm -rf *
+    [[ -d "$HOME" ]] && cd "$HOME" && rm -rf *
     # Cleaning up event.json
-    [[ -f “$GITHUB_EVENT_PATH” ]] && rm $GITHUB_EVENT_PATH
+    [[ -f "$GITHUB_EVENT_PATH" ]] && rm $GITHUB_EVENT_PATH
 }
 
 trap cleanup EXIT
