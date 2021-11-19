@@ -195,6 +195,7 @@ then
     for GROUP in "${GROUP_NAMES[@]}"
     do
         echo "requesting symbol info for ${GROUP}"
+        echo "request: ${REST_URL}/symbol_info?group=${GROUP}"
         FILE=${GROUP}.json
         
         if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
