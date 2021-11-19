@@ -195,7 +195,11 @@ then
     for GROUP in "${GROUP_NAMES[@]}"
     do
         echo "requesting symbol info for ${GROUP}"
+
+        #### DEBUG ###
         echo "request: ${REST_URL}/symbol_info?group=${GROUP}"
+        #### DEBUG ###
+
         FILE=${GROUP}.json
         
         if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
@@ -203,7 +207,12 @@ then
             echo "error getting symbol info for ${GROUP}"
             exit 1
         fi
-
+        
+        #### DEBUG ###
+        echo "Received file:"
+        cat "symbols/${FILE}"
+        #### DEBUG ###
+        
         SYMBOLS_STATUS=$(jq .s "symbols/${FILE}")
         if [ "$SYMBOLS_STATUS" != '"ok"' ] 
         then
