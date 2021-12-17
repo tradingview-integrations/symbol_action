@@ -212,6 +212,10 @@ then
         then
             ERROR_MESSAGE=$(jq .errmsg "symbols/${FILE}")
             echo "got not \"ok\" symbols status for ${GROUP}: s: \"$SYMBOLS_STATUS\", errmsg: \"$ERROR_MESSAGE\""
+            echo "received file:"
+            echo "-------------------------------"
+            cat "symbols/${FILE}"
+            echo "-------------------------------"
             exit 1
         fi
         
