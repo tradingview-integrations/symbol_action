@@ -204,6 +204,10 @@ then
         if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
         then
             echo "error getting symbol info for ${GROUP}"
+            echo "received:"
+            echo "-------------------------------"
+            cat "symbols/${FILE}"
+            echo "-------------------------------"
             exit 1
         fi
         
@@ -212,7 +216,7 @@ then
         then
             ERROR_MESSAGE=$(jq .errmsg "symbols/${FILE}")
             echo "got not \"ok\" symbols status for ${GROUP}: s: \"$SYMBOLS_STATUS\", errmsg: \"$ERROR_MESSAGE\""
-            echo "received file:"
+            echo "received:"
             echo "-------------------------------"
             cat "symbols/${FILE}"
             echo "-------------------------------"
