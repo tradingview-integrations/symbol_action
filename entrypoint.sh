@@ -53,11 +53,6 @@ then
             aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/staging/$FINAL_NAME" --no-progress
         fi
     done
-    if [ $ENVIRONMENT = "production" ]
-    then
-        echo reseting staging symbols to production version
-        git checkout staging && git fetch && git checkout origin/production 'symbols*' && git commit -m "sync with production" && git push origin HEAD
-    fi
     exit 0
 fi
 
