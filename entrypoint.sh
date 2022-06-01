@@ -47,11 +47,6 @@ then
         FINAL_NAME=${INTEGRATION_NAME}/$(basename "$F")
         echo uploading symbols/$F to $S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME
         aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME" --no-progress
-        if [ $ENVIRONMENT = "production" ]
-        then
-            echo uploading $F to $S3_BUCKET_SYMBOLS/staging/$FINAL_NAME
-            aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/staging/$FINAL_NAME" --no-progress
-        fi
     done
     exit 0
 fi
