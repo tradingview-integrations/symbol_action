@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Update Tag
-        uses: richardsimko/update-tag@v1.0.5
+        uses: richardsimko/update-tag@v1
         with:
           tag_name: v0.1
         env:
