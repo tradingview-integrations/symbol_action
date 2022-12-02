@@ -1,6 +1,7 @@
 #!python3
 
 import json
+import sys
 
 def load_json(fime_name):
   with open(file_name) as f:
@@ -8,8 +9,8 @@ def load_json(fime_name):
   return res
 
 def main():
-  c_map = {c["cmc-id"]: c["id"] for c in load_json("currency.json_path")
-  group = "param 1"
+  c_map = {c["cmc-id"]: c["id"] for c in load_json("currency.json")
+  group = sys.argv[1]
   symbol_info = load_json(group)
   symbol_info["currency"] = [c_map[i] for i in symbol_info["currency-cmc-id"]]
   symbol_info["base-currency"] = [c_map[i] for i in symbol_info["base-currency-cmc-id"]]
