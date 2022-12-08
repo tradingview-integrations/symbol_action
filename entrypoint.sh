@@ -2,6 +2,7 @@
 
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
+INSPECT_VERSION="_r4.16"
 
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
@@ -118,7 +119,7 @@ then
     for F in $MODIFIED; do cp "$F" "$F.old"; done
 
     # download inspect tool
-    aws s3 cp "$S3_BUCKET_INSPECT/inspect_r4.13" ./inspect --no-progress && chmod +x ./inspect
+    aws s3 cp "${S3_BUCKET_INSPECT}/inspect${INSPECT_VERSION}" ./inspect --no-progress && chmod +x ./inspect
     echo inpsect info: $(./inspect version)
 
     # check files
@@ -175,7 +176,7 @@ then
     rm -v symbols/*.json
 
     # download inspect tool
-    aws s3 cp "$S3_BUCKET_INSPECT/inspect_r4.13" ./inspect --no-progress && chmod +x ./inspect
+    aws s3 cp "${S3_BUCKET_INSPECT}/inspect${INSPECT_VERSION}" ./inspect --no-progress && chmod +x ./inspect
     echo inpsect info: $(./inspect version)
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
