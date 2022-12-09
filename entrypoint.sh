@@ -2,7 +2,7 @@
 
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
-INSPECT_VERSION="_r4.16"
+INSPECT_VERSION="_r4.13"
 
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
