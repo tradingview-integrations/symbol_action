@@ -15,12 +15,6 @@ def load_json(file_name):
 def curr_map(source, c_map):
     """ map currencies """
     return [c_map.get(i, F"ERROR mapping for cmc-id: {i}") for i in source]
-    # for i in source:
-    #     curr_id = c_map.get(i, None)
-    #     # if curr_id is None:
-    #     #     # what to do here ?
-    #     res.append(curr_id)
-    # return res
 
 
 def main():
