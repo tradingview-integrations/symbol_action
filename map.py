@@ -22,9 +22,15 @@ def main():
     c_map = {c["cmc-id"]: c["id"] for c in load_json("currency.json")}
     group = sys.argv[1]
     symbol_info = load_json(group)
-    symbol_info["currency"] = curr_map(symbol_info["currency-cmc-id"], c_map)
-    symbol_info["base-currency"] = curr_map(symbol_info["base-currency-cmc-id"], c_map)
-    del symbol_info["currency-cmc-id"]
-    del symbol_info["base-currency-cmc-id"]
-    with open(group, "w") as file:
-        json.dump(file, symbol_info)
+    mapped = False
+    if "currency-cmc-id" in symbol_info:
+        symbol_info["currency"] = curr_map(symbol_info["currency-cmc-id"], c_map)
+        del symbol_info["currency-cmc-id"]
+        mapped = True
+    if "base-currency-cmc-id" in symbol_info:
+        symbol_info["base-currency"] = curr_map(symbol_info["base-currency-cmc-id"], c_map)
+        del symbol_info["base-currency-cmc-id"]
+        mapped = True
+    if mapped:
+        with open(group, "w") as file:
+            json.dump(file, symbol_info, indent=2)
