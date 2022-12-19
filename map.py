@@ -24,11 +24,11 @@ def main():
     symbol_info = load_json(group)
     mapped = False
     if "currency-cmc-id" in symbol_info:
-        symbol_info["currency"] = curr_map(symbol_info["currency-cmc-id"], c_map)
+        symbol_info["currency-id"] = curr_map(symbol_info["currency-cmc-id"], c_map)
         del symbol_info["currency-cmc-id"]
         mapped = True
     if "base-currency-cmc-id" in symbol_info:
-        symbol_info["base-currency"] = curr_map(symbol_info["base-currency-cmc-id"], c_map)
+        symbol_info["base-currency-id"] = curr_map(symbol_info["base-currency-cmc-id"], c_map)
         del symbol_info["base-currency-cmc-id"]
         mapped = True
     if mapped:
