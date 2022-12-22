@@ -184,7 +184,24 @@ then
     then 
         AUTHORIZATION="Authorization: Bearer ${TOKEN}"
     fi
+    
     PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
+    
+    if [ -f ./config/currency_convert ]
+    then
+        CONVERT=1
+        if [[ "${ENVIRONMENT}" == "production" ]]
+        then 
+            currency_url='http://s3.amazonaws.com/tradingview-currencies/currencies.json'
+        else
+            currency_url='http://s3.amazonaws.com/tradingview-currencies-staging/currencies.json'
+        fi
+        curl --compressed "${currency_url}" | jq '.[] | select(."cmc-id" != "" and ."cmc-id" != null) | {"cmc-id":."cmc-id", "id":."id"}' \
+        | jq . -s > currencies.json
+    else
+        CONVERT=0
+    fi
+    
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
     do
@@ -222,10 +239,14 @@ then
 
         # if symbol info is valid, the file will be replaced by normalized version
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
-        ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}"
-
-        # remove .s from file in case when inspect didn't normalizate the file
-        jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+        if ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}"
+        then
+            # convert cu
+            [[ %{CONVERT} == 1 ]] && python3 map.py "symbols/${FILE}"
+        else
+            # remove .s from file in case when inspect didn't normalizate the file
+            jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+        fi
 
     done
 
