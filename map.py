@@ -14,11 +14,13 @@ def load_json(file_name):
 
 def curr_map(source, c_map):
     """ map currencies """
-    return [c_map.get(i, F"ERROR mapping for cmc-id: {i}") for i in source]
+    # store None (null in JSON) for currencies without cmc-id
+    return [c_map.get(i, None) for i in source]
 
 
 def main():
     """ main routine """
+    # load map of cmc-id that exists into currency.json
     c_map = {c["cmc-id"]: c["id"] for c in load_json("currency.json")}
     group = sys.argv[1]
     symbol_info = load_json(group)
