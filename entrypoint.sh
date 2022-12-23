@@ -2,7 +2,7 @@
 
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
-INSPECT_VERSION="_r4.13"
+INSPECT_VERSION="_r4.18"
 
 # check command 
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
@@ -198,9 +198,11 @@ then
         fi
         curl --compressed "${currency_url}" | jq '.[] | select(."cmc-id" != "" and ."cmc-id" != null) | {"cmc-id":."cmc-id", "id":."id"}' \
         | jq . -s > currencies.json
+        echo "currency.json received"
     else
         CONVERT=0
     fi
+    echo "convert currencies ${CONVERT}"
     
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
@@ -250,8 +252,13 @@ then
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
         if ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}"
         then
-            # convert cu
-            [[ %{CONVERT} == 1 ]] && python3 map.py "symbols/${FILE}"
+            
+            if [ ${CONVERT} == 1 ]
+            then
+                echo "converting currenciies into ${GROUP}"
+                python3 "${1}/map.py" currencies.json "symbols/${FILE}" 
+                echo "currencies in file ${FILE} are converted"
+            fi
         else
             # remove .s from file in case when inspect didn't normalizate the file
             jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
