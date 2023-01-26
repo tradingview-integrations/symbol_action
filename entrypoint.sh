@@ -234,6 +234,10 @@ then
         if [ "${PREPROCESS}" != "" ] 
         then
             jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+            
+            ## temporary ugly fix of jq behavior with long integers like 1000000000000000000
+            sed -i 's/1e+18/1000000000000000000/g' symbols/biswap.json 
+            
             echo "file ${FILE} preprocessed"
         fi
 
