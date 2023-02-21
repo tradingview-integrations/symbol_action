@@ -236,8 +236,13 @@ then
             jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
             
             ## temporary ugly fix of jq behavior with long integers like 1000000000000000000
-            sed -i 's/1e+18/1000000000000000000/g' symbols/biswap.json 
-            
+            to='100000000000000' # 1e+15 is not converted by jq 
+            for ((i=16; i<=22; i++))
+            do 
+                what="1e+$i"
+                to="${to}0"
+                sed -i "s/$what/$to/g" "symbols/${FILE}"
+            done
             echo "file ${FILE} preprocessed"
         fi
 
