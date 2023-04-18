@@ -4,5 +4,5 @@ description: 'Symbols check and upload action'
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/entrypoint.sh
+    - run: ${{ github.action_path }}/entrypoint.sh ${{ github.action_path }}
       shell: bash
