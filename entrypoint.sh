@@ -220,7 +220,7 @@ then
             echo "-------------------------------"
             exit 1
         fi
-        
+      
         SYMBOLS_STATUS=$(jq .s "symbols/${FILE}")
         if [ "$SYMBOLS_STATUS" != '"ok"' ] 
         then
@@ -232,7 +232,10 @@ then
             echo "-------------------------------"
             exit 1
         fi
-        
+        # temporary logging of received symbols
+        echo "received symbols:" 
+        jq .symbol "symbols/${FILE}"
+        # end of temporary logging of received symbols
         if [ "${PREPROCESS}" != "" ] 
         then
             jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
