@@ -262,8 +262,9 @@ then
                 echo "currencies in file ${FILE} are converted"
             fi
         else
-            # remove .s from file in case when inspect didn't normalizate the file
-            jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+            # remove "s" field from file in case when inspect didn't normalizate the file 
+            # IMPORTANT: don't use `jq` as it can convert some values (for example incorrect int 1.0 to correct 1) ###  jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
+            sed -i 's\"s": *"ok" *,\\' symbols/${FILE}
         fi
 
     done
