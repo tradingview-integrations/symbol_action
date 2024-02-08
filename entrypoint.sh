@@ -3,7 +3,7 @@
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
 
-# check command 
+# check command
 if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
 then
     echo "ERROR: Wrong command received: '$CMD'"
@@ -53,7 +53,9 @@ fi
 
 if [ ${CMD} == 'VALIDATE' ]
 then
-    echo validete symbol info
+    INSPECT_ARGS=""  # default, but can be rewrite by file in repo
+    INSPECT_ARGS_FILE_PATH="./config/inspect_args"
+    echo validate symbol info
     ENVIRONMENT=${GITHUB_BASE_REF}
     if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
     then
@@ -124,10 +126,17 @@ then
     # check files
     FAILED=false
 
+    if [[ -f $INSPECT_ARGS_FILE_PATH ]]; then
+        INSPECT_ARGS=$(cat $INSPECT_ARGS_FILE_PATH) > /dev/null 2>&1
+        echo "Args for inspect in repo: ${INSPECT_ARGS}"
+    else
+        echo "No inspect args in repo"
+    fi
+
     for F in $MODIFIED
     do
         echo Checking "$F"
-        ./inspect symfile --old="$F.old" --new="$F.new" --log-file=stdout --report-file=report.txt --report-format=github
+        ./inspect symfile --old="$F.old" --new="$F.new" --log-file=stdout --report-file=report.txt --report-format=github "$INSPECT_ARGS"
         ./inspect symfile diff --old="$F.old" --new="$F.new" --log-file=stdout
         RESULT=$(grep -c FAIL report.txt)
         echo "#### $F" >> full_report.txt
@@ -176,21 +185,21 @@ then
 
     # download inspect tool
     aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
-    echo inpsect info: $(./inspect version)
+    echo inspect info: $(./inspect version)
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
     if [ "${TOKEN}" != "" ]
-    then 
+    then
         AUTHORIZATION="Authorization: Bearer ${TOKEN}"
     fi
-    
+
     PREPROCESS=$(cat ./config/preprocess) > /dev/null 2>&1
-    
+
     if [ -f ./config/currency_convert ]
     then
         CONVERT=1
         if [[ "${ENVIRONMENT}" == "production" ]]
-        then 
+        then
             currency_url='http://s3.amazonaws.com/tradingview-currencies/currencies.json'
         else
             currency_url='http://s3.amazonaws.com/tradingview-currencies-staging/currencies.json'
@@ -202,14 +211,14 @@ then
         CONVERT=0
     fi
     echo "convert currencies ${CONVERT}"
-    
+
     IFS=',' read -r -a GROUP_NAMES <<< "$UPSTREAM_GROUPS"
     for GROUP in "${GROUP_NAMES[@]}"
     do
         echo "requesting symbol info for ${GROUP}"
 
         FILE=${GROUP}.json
-        
+
         if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
         then
             echo "error getting symbol info for ${GROUP}"
@@ -219,9 +228,9 @@ then
             echo "-------------------------------"
             exit 1
         fi
-      
+
         SYMBOLS_STATUS=$(jq .s "symbols/${FILE}")
-        if [ "$SYMBOLS_STATUS" != '"ok"' ] 
+        if [ "$SYMBOLS_STATUS" != '"ok"' ]
         then
             ERROR_MESSAGE=$(jq .errmsg "symbols/${FILE}")
             echo "got not \"ok\" symbols status for ${GROUP}: s: \"$SYMBOLS_STATUS\", errmsg: \"$ERROR_MESSAGE\""
@@ -232,17 +241,17 @@ then
             exit 1
         fi
         # temporary logging of received symbols
-        echo "received symbols:" 
+        echo "received symbols:"
         jq .symbol "symbols/${FILE}"
         # end of temporary logging of received symbols
-        if [ "${PREPROCESS}" != "" ] 
+        if [ "${PREPROCESS}" != "" ]
         then
             jq "${PREPROCESS}" "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
-            
+
             ## temporary ugly fix of jq behavior with long integers like 1000000000000000000
-            to='100000000000000' # 1e+15 is not converted by jq 
+            to='100000000000000' # 1e+15 is not converted by jq
             for ((i=16; i<=22; i++))
-            do 
+            do
                 what="1e+$i"
                 to="${to}0"
                 sed -i "s/$what/$to/g" "symbols/${FILE}"
@@ -254,15 +263,15 @@ then
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
         if ./inspect symfile normalize --old "symbols/${FILE}" --new "symbols/${FILE}"
         then
-            
+
             if [ ${CONVERT} == 1 ]
             then
                 echo "converting currenciies into ${GROUP}"
-                python3 "${1}/map.py" currencies.json "symbols/${FILE}" 
+                python3 "${1}/map.py" currencies.json "symbols/${FILE}"
                 echo "currencies in file ${FILE} are converted"
             fi
         else
-            # remove "s" field from file in case when inspect didn't normalizate the file 
+            # remove "s" field from file in case when inspect didn't normalizate the file
             # IMPORTANT: don't use `jq` as it can convert some values (for example incorrect int 1.0 to correct 1) ###  jq 'del(.s)' "symbols/${FILE}" > temp.json && mv temp.json "symbols/${FILE}"
             sed -i 's\"s": *"ok" *,\\' symbols/${FILE}
         fi
