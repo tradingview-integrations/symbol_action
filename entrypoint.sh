@@ -136,7 +136,7 @@ then
     for F in $MODIFIED
     do
         echo Checking "$F"
-        ./inspect symfile --old="$F.old" --new="$F.new" --log-file=stdout --report-file=report.txt --report-format=github "$INSPECT_ARGS"
+        ./inspect symfile --old="$F.old" --new="$F.new" --log-file=stdout --report-file=report.txt --report-format=github $INSPECT_ARGS
         ./inspect symfile diff --old="$F.old" --new="$F.new" --log-file=stdout
         RESULT=$(grep -c FAIL report.txt)
         echo "#### $F" >> full_report.txt
