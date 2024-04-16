@@ -120,7 +120,8 @@ then
     for F in $MODIFIED; do cp "$F" "$F.old"; done
 
     # download inspect tool
-    aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
+    INSPECT_NAME="inspect-linux-amd64-153" # inspect-github-${ENVIRONMENT}
+    aws s3 cp "${S3_BUCKET_INSPECT}/${INSPECT_NAME}" ./inspect --no-progress && chmod +x ./inspect
     echo inpsect info: $(./inspect version)
 
     # check files
@@ -184,7 +185,8 @@ then
     rm -v symbols/*.json
 
     # download inspect tool
-    aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
+    INSPECT_NAME="inspect-linux-amd64-153" # inspect-github-${ENVIRONMENT}
+    aws s3 cp "${S3_BUCKET_INSPECT}/${INSPECT_NAME}" ./inspect --no-progress && chmod +x ./inspect
     echo inspect info: $(./inspect version)
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
