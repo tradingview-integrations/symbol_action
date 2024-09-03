@@ -277,7 +277,7 @@ then
 
         # if symbol info is valid, the file will be replaced by normalized version
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
-        if ./inspect symfile normalize --groups="${GROUP}"
+        if ./inspect symfile normalize --groups="symbols/${GROUP}"
         then
 
             if [ ${CONVERT} == 1 ]
