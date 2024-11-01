@@ -232,7 +232,7 @@ then
     for GROUP in "${GROUP_NAMES[@]}"
     do
         echo "requesting symbol info for ${GROUP}"
-
+        GROUP=${GROUP%:*}   # remove kinds from groupname
         FILE=${GROUP}.json
 
         if ! curl -s ${RETRY_PARAMS} "${REST_URL}/symbol_info?group=${GROUP}" -H "${AUTHORIZATION}" > "symbols/${FILE}"
