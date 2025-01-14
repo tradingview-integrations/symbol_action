@@ -63,8 +63,10 @@ fi
 
 if [ ${CMD} == 'VALIDATE' ]
 then
+    set -x
     INSPECT_ARGS=""  # default, but can be rewrite by file in repo
     INSPECT_ARGS_FILE_PATH="./config/inspect_args"
+
     echo validate symbol info
     ENVIRONMENT=${GITHUB_BASE_REF}
     if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
@@ -134,6 +136,8 @@ then
     git checkout -b old origin/$ENVIRONMENT
     for F in "${MODIFIED[@]}"; do cp "$F" "$F.old"; done
 
+    git checkout $GITHUB_HEAD_REF
+
     # download inspect tool
     aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
     echo inspect info: $(./inspect version)
@@ -156,19 +160,44 @@ then
     MODIFIED_STR=$(arr2str , ${MODIFIED[@]})
     echo "Checking ${MODIFIED_STR} groups"
     ./inspect symfile --groups="${MODIFIED_STR}" --log-file=stdout --report-file=full_report.txt --report-format=github $INSPECT_ARGS
-    ./inspect symfile diff --groups="${MODIFIED_STR}" --log-file=stdout
-    RESULT=$(grep -c FAIL full_report.txt)
-    [ "$RESULT" -ne 0 ] && FAILED=true
+    ./inspect symfile diff --groups="${MODIFIED_STR}" --log-file=stdout # TODO: почему сохраняется в файл, а не stdout
 
     FULL_REPORT=$(cat full_report.txt)
+    gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
 
-    [ $FAILED = "true" ] && gh pr review $PR_NUMBER -c -b "$FULL_REPORT" && echo some tests have failed && exit 1
-    [ $FAILED = "false" ] && gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
+    GROUP_ERR_VALIDATION_STR=$(grep FAIL full_report.txt | cut -f3 -d'*' | uniq)
+    readarray -t GROUP_ERR_VALIDATION <<< $GROUP_ERR_VALIDATION_STR
+
+    for err_group in ${GROUP_ERR_VALIDATION[@]};
+    do
+        mv symbols/$err_group.json.old symbols/$err_group.json # restore previous file version for failed groups
+    done;
+
+    err_group_changed=$(git status --porcelain | grep ".json$")
+    if [[ $(wc -l <<< $err_group_changed ) -ne 0 ]]; then
+        # we restored groups with issue, so we need to push them to branch
+        # before push we need to check changes between source and target branch
+        # if finally there is no changes between source and target branch --> close this PR
+        git add '*.json'
+        git commit -m "automatic restore old version for issued groups: $(arr2str , ${GROUP_ERR_VALIDATION[@]})"
+        MODIFIED=($(git diff --name-only origin/$ENVIRONMENT | grep ".json$"))
+        if [[ -z "$MODIFIED" ]]; then
+            echo "No symbol info files were modified after restoring issued groups from 'origin/${ENVIRONMENT}' branch"
+            gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified after restoring issued groups from \`origin/${ENVIRONMENT}\` branch"
+            gh pr close $PR_NUMBER --delete-branch
+            exit 0
+        fi
+        git push
+        msg=$(echo -e "Restored previous versions from master branch for next groups: \n\`\`\`\n$(arr2str '\n' ${GROUP_ERR_VALIDATION[@]})\n\`\`\`")
+        gh pr review $PR_NUMBER -c -b "$msg"
+    fi
 
     echo ready to merge
 
     # merge PR
-    gh pr merge $PR_NUMBER --merge --delete-branch
+    #gh pr merge $PR_NUMBER --merge --delete-branch
+    # DEBUG:
+    echo "mock merged"
 
     exit 0 # pr merge can fail in case of data conflicts, but it is not fail of verification
 fi
