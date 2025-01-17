@@ -182,6 +182,7 @@ then
         # if finally there is no changes between source and target branch --> close this PR
         git add '*.json'
         git commit -m "automatic restore old version for issued groups: $(arr2str , ${GROUP_ERR_VALIDATION[@]})"
+        git push
         MODIFIED=($(git diff --name-only origin/$ENVIRONMENT | grep ".json$"))
         if [[ -z "$MODIFIED" ]]; then
             echo "No symbol info files were modified after restoring issued groups from 'origin/${ENVIRONMENT}' branch"
@@ -189,7 +190,6 @@ then
             gh pr close $PR_NUMBER --delete-branch
             exit 0
         fi
-        git push
         msg=$(echo -e "Restored previous versions from master branch for next groups: \n\`\`\`\n$(arr2str '\n' ${GROUP_ERR_VALIDATION[@]})\n\`\`\`")
         gh pr review $PR_NUMBER -c -b "$msg"
     fi
