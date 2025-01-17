@@ -66,7 +66,6 @@ fi
 
 if [ ${CMD} == 'VALIDATE' ]
 then
-    set -x
     INSPECT_ARGS=""  # default, but can be rewrite by file in repo
     INSPECT_ARGS_FILE_PATH="./config/inspect_args"
 
@@ -163,7 +162,7 @@ then
     MODIFIED_STR=$(arr2str , ${MODIFIED[@]})
     echo "Checking ${MODIFIED_STR} groups"
     ./inspect symfile --groups="${MODIFIED_STR}" --log-file=stdout --report-file=full_report.txt --report-format=github $INSPECT_ARGS
-    ./inspect symfile diff --groups="${MODIFIED_STR}" --log-file=stdout # TODO: почему сохраняется в файл, а не stdout
+    ./inspect symfile diff --groups="${MODIFIED_STR}" --log-file=stdout
 
     FULL_REPORT=$(cat full_report.txt)
     gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
@@ -176,8 +175,8 @@ then
         mv symbols/$err_group.json.old symbols/$err_group.json # restore previous file version for failed groups
     done;
 
-    err_group_changed=$(git status --porcelain | grep ".json$")
-    if [[ $(wc -l <<< $err_group_changed ) -ne 0 ]]; then
+    err_group_changed=$(git status --porcelain | grep -c ".json$")
+    if [[ $err_group_changed -gt 0 ]]; then
         # we restored groups with issue, so we need to push them to branch
         # before push we need to check changes between source and target branch
         # if finally there is no changes between source and target branch --> close this PR
@@ -198,9 +197,7 @@ then
     echo ready to merge
 
     # merge PR
-    #gh pr merge $PR_NUMBER --merge --delete-branch
-    # DEBUG:
-    echo "mock merged"
+    gh pr merge $PR_NUMBER --merge --delete-branch
 
     exit 0 # pr merge can fail in case of data conflicts, but it is not fail of verification
 fi
