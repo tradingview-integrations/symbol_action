@@ -36,6 +36,9 @@ function arr2str {
     # arr2str , ${arr[@]} => 1,2,3
     local IFS="$1"
     shift
+    if [[ "$IFS" == '\n' ]]; then
+        IFS=$'\n'
+    fi
     echo "$*";
 }
 
