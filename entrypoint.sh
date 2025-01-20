@@ -190,7 +190,7 @@ then
             gh pr close $PR_NUMBER --delete-branch
             exit 0
         fi
-        msg=$(echo -e "Restored previous versions from master branch for next groups: \n\`\`\`\n$(arr2str '\n' ${GROUP_ERR_VALIDATION[@]})\n\`\`\`")
+        msg=$(echo -e "Symbol info wasn't updated for next groups due to issues: \n\`\`\`\n$(arr2str '\n' ${GROUP_ERR_VALIDATION[@]})\n\`\`\`")
         gh pr review $PR_NUMBER -c -b "$msg"
     fi
 
