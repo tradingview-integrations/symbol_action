@@ -36,9 +36,6 @@ function arr2str {
     # arr2str , ${arr[@]} => 1,2,3
     local IFS="$1"
     shift
-    if [[ "$IFS" == '\n' ]]; then
-        IFS=$'\n'
-    fi
     echo "$*";
 }
 
@@ -68,7 +65,6 @@ if [ ${CMD} == 'VALIDATE' ]
 then
     INSPECT_ARGS=""  # default, but can be rewrite by file in repo
     INSPECT_ARGS_FILE_PATH="./config/inspect_args"
-
     echo validate symbol info
     ENVIRONMENT=${GITHUB_BASE_REF}
     if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
@@ -138,8 +134,6 @@ then
     git checkout -b old origin/$ENVIRONMENT
     for F in "${MODIFIED[@]}"; do cp "$F" "$F.old"; done
 
-    git checkout $GITHUB_HEAD_REF
-
     # download inspect tool
     aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
     echo inspect info: $(./inspect version)
@@ -163,36 +157,13 @@ then
     echo "Checking ${MODIFIED_STR} groups"
     ./inspect symfile --groups="${MODIFIED_STR}" --log-file=stdout --report-file=full_report.txt --report-format=github $INSPECT_ARGS
     ./inspect symfile diff --groups="${MODIFIED_STR}" --log-file=stdout
+    RESULT=$(grep -c FAIL full_report.txt)
+    [ "$RESULT" -ne 0 ] && FAILED=true
 
     FULL_REPORT=$(cat full_report.txt)
-    gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
 
-    GROUP_ERR_VALIDATION_STR=$(grep FAIL full_report.txt | cut -f3 -d'*' | uniq)
-    readarray -t GROUP_ERR_VALIDATION <<< $GROUP_ERR_VALIDATION_STR
-
-    for err_group in ${GROUP_ERR_VALIDATION[@]};
-    do
-        mv symbols/$err_group.json.old symbols/$err_group.json # restore previous file version for failed groups
-    done;
-
-    err_group_changed=$(git status --porcelain | grep -c ".json$")
-    if [[ $err_group_changed -gt 0 ]]; then
-        # we restored groups with issue, so we need to push them to branch
-        # before push we need to check changes between source and target branch
-        # if finally there is no changes between source and target branch --> close this PR
-        git add '*.json'
-        git commit -m "automatic restore old version for issued groups: $(arr2str , ${GROUP_ERR_VALIDATION[@]})"
-        git push
-        MODIFIED=($(git diff --name-only origin/$ENVIRONMENT | grep ".json$"))
-        if [[ -z "$MODIFIED" ]]; then
-            echo "No symbol info files were modified after restoring issued groups from 'origin/${ENVIRONMENT}' branch"
-            gh pr review $PR_NUMBER -c -b "No symbol info files (JSON) were modified after restoring issued groups from \`origin/${ENVIRONMENT}\` branch"
-            gh pr close $PR_NUMBER --delete-branch
-            exit 0
-        fi
-        msg=$(echo -e "Symbol info wasn't updated for next groups due to issues: \n\`\`\`\n$(arr2str '\n' ${GROUP_ERR_VALIDATION[@]})\n\`\`\`")
-        gh pr review $PR_NUMBER -c -b "$msg"
-    fi
+    [ $FAILED = "true" ] && gh pr review $PR_NUMBER -c -b "$FULL_REPORT" && echo some tests have failed && exit 1
+    [ $FAILED = "false" ] && gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
 
     echo ready to merge
 
