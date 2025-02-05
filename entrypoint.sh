@@ -11,7 +11,7 @@ then
 fi
 
 if [ ${CMD} == 'VALIDATE' ]; then
-    ENVIRONMENT=${GITHUB_BASE_REF##*/}
+    ENVIRONMENT=${GITHUB_BASE_REF}
 elif [ ${CMD} == 'CHECK' ]; then
     ENVIRONMENT=${GITHUB_REF##*/}
 fi
