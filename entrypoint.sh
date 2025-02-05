@@ -10,11 +10,27 @@ then
     exit 1
 fi
 
-echo ${GITHUB_TOKEN} | gh auth login --with-token > /dev/null 2>&1
-if [ -z $? ]
-then
-    echo "Authorizaton error, update GITHUB_TOKEN"
-    exit 1
+if [ ${CMD} == 'VALIDATE' ]; then
+    ENVIRONMENT=${GITHUB_BASE_REF##*/}
+elif [ ${CMD} == 'CHECK' ]; then
+    ENVIRONMENT=${GITHUB_REF##*/}
+fi
+
+if [ ${CMD} != 'UPLOAD' ]; then
+    if [ ${ENVIRONMENT} == "staging" ]; then
+        GH_TOKEN="${GITHUB_TOKEN_STAGING}"
+    elif [ ${ENVIRONMENT} == "production" ]; then
+        GH_TOKEN="${GITHUB_TOKEN}"
+    else
+        GH_TOKEN=""
+    fi
+
+    echo ${GH_TOKEN} | gh auth login --with-token > /dev/null 2>&1
+    if [ -z $? ]
+    then
+        echo "Authorizaton error, update GITHUB_TOKEN for ${ENVIRONMENT} environment"
+        exit 1
+    fi
 fi
 
 git config user.name $GITHUB_USER
@@ -59,7 +75,9 @@ then
     do
         FINAL_NAME=${INTEGRATION_NAME}/$(basename "$F")
         echo uploading symbols/$F to $S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME
+        set -e
         aws s3 cp "symbols/$F" "$S3_BUCKET_SYMBOLS/$ENVIRONMENT/$FINAL_NAME" --no-progress
+        set +e
     done
     exit 0
 fi
@@ -141,8 +159,11 @@ then
     git checkout $GITHUB_HEAD_REF
 
     # download inspect tool
+    set -e
     aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
-    echo inspect info: $(./inspect version)
+    inspect_version=$(./inspect version)
+    set +e
+    echo "inspect info: ${inspect_version}"
 
     # check files
     FAILED=false
@@ -229,8 +250,11 @@ then
     rm -v symbols/*.json
 
     # download inspect tool
+    set -e
     aws s3 cp "${S3_BUCKET_INSPECT}/inspect-github-${ENVIRONMENT}" ./inspect --no-progress && chmod +x ./inspect
-    echo inspect info: $(./inspect version)
+    inspect_version=$(./inspect version)
+    set +e
+    echo "inspect info: ${inspect_version}"
 
     RETRY_PARAMS="--connect-timeout 10 --max-time 10 --retry 5 --retry-delay 0 --retry-max-time 40"
     if [ "${TOKEN}" != "" ]
