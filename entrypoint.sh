@@ -16,6 +16,15 @@ elif [ ${CMD} == 'CHECK' ]; then
     ENVIRONMENT=${GITHUB_REF##*/}
 fi
 
+INSPECT_ARGS=""  # default, but can be rewrite by file in repo
+INSPECT_ARGS_FILE_PATH="./config/inspect_args"
+if [[ -f $INSPECT_ARGS_FILE_PATH ]]; then
+    INSPECT_ARGS=$(cat $INSPECT_ARGS_FILE_PATH) > /dev/null 2>&1
+    echo "Args for inspect in repo: ${INSPECT_ARGS}"
+else
+    echo "No inspect args in repo"
+fi
+
 if [ ${CMD} != 'UPLOAD' ]; then
     # we don't login in UPLOAD CMD because we don't use GH API in this CMD
     if [ ${ENVIRONMENT} == "staging" ]; then
@@ -87,9 +96,6 @@ fi
 
 if [ ${CMD} == 'VALIDATE' ]
 then
-    INSPECT_ARGS=""  # default, but can be rewrite by file in repo
-    INSPECT_ARGS_FILE_PATH="./config/inspect_args"
-
     echo validate symbol info
     ENVIRONMENT=${GITHUB_BASE_REF}
     if [[ -z "$(echo 'production staging' | grep -w "$ENVIRONMENT")" ]]
@@ -170,13 +176,6 @@ then
 
     # check files
     FAILED=false
-
-    if [[ -f $INSPECT_ARGS_FILE_PATH ]]; then
-        INSPECT_ARGS=$(cat $INSPECT_ARGS_FILE_PATH) > /dev/null 2>&1
-        echo "Args for inspect in repo: ${INSPECT_ARGS}"
-    else
-        echo "No inspect args in repo"
-    fi
 
     arraylength=${#MODIFIED[@]}
     for ((i = 0; i < ${arraylength}; i++)); do
@@ -333,7 +332,7 @@ then
 
         # if symbol info is valid, the file will be replaced by normalized version
         # don't stop the script execution when normalization fails: pass wrong data to merge request to see problems there
-        if ./inspect symfile normalize --groups="symbols/${GROUP}"
+        if ./inspect symfile normalize --groups="symbols/${GROUP}" $INSPECT_ARGS
         then
 
             if [ ${CONVERT} == 1 ]
