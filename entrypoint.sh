@@ -2,14 +2,16 @@
 
 GITHUB_USER="updater-bot"
 GITHUB_USER_EMAIL="updater-bot@fastmail.us"
+BRANCH_RESTORE="manual" # TODO: оставить так или какой-то шаблон тут зафигачить?
 
 # check command
-if [[ -z "$(echo 'UPLOAD VALIDATE CHECK' | grep -w "$CMD")" ]]
+if [[ -z "$(echo 'UPLOAD VALIDATE CHECK RESTORE' | grep -w "$CMD")" ]]
 then
     echo "ERROR: Wrong command received: '$CMD'"
     exit 1
 fi
 
+# TODO: что-то тут как дубликат
 if [ ${CMD} == 'VALIDATE' ]; then
     ENVIRONMENT=${GITHUB_BASE_REF}
 elif [ ${CMD} == 'CHECK' ]; then
@@ -168,9 +170,6 @@ then
     echo "inspect info: ${inspect_version}"
     set +e
 
-    # check files
-    FAILED=false
-
     if [[ -f $INSPECT_ARGS_FILE_PATH ]]; then
         INSPECT_ARGS=$(cat $INSPECT_ARGS_FILE_PATH) > /dev/null 2>&1
         echo "Args for inspect in repo: ${INSPECT_ARGS}"
@@ -191,6 +190,11 @@ then
     FULL_REPORT=$(cat full_report.txt)
     gh pr review $PR_NUMBER -c -b "$FULL_REPORT"
 
+    # TODO: уже в этом месте можно не откатывать, если выполняется шаблон названия функции
+    if [[ ]]; then
+        echo "it's branch for manual check & merging/cancelling changes"
+        exit 1
+    fi
     GROUP_ERR_VALIDATION_STR=$(grep FAIL full_report.txt | cut -f3 -d'*' | uniq)
     readarray -t GROUP_ERR_VALIDATION <<< $GROUP_ERR_VALIDATION_STR
 
@@ -374,4 +378,20 @@ then
     fi
 
     exit 0
+fi
+
+
+if [ ${CMD} == 'RESTORE' ]
+then
+# here we restore issued groups from last MR
+GROUPS=${GROUPS:-all}
+
+# TODO:
+# 0. made validation for inputs
+# 1. get last MR number and hash
+latest_pr=$(gh pr list --base="${ENVIRONMENT}" --author="${GITHUB_USER}" -R "tradingview-integrations/${UPSTREAM}" --json number,createdAt --state merged --state closed --limit 1)
+# 2. restore branch or get groups from this SHA
+# 3. revert changes or get input from first commit
+# 4. create branch with template name push it
+# 5. create MR
 fi
